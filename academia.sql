@@ -5,18 +5,18 @@ USE academia_db;
 CREATE TABLE Academia (
     cnpj   CHAR(14)     NOT NULL,
     nome   VARCHAR(100) NOT NULL,
-    cidade VARCHAR(80)  NOT NULL,
-    uf     CHAR(2)      NOT NULL,
-    rua    VARCHAR(120) NOT NULL,
+    cidade VARCHAR(100) NOT NULL,
+    uf     VARCHAR(3)   NOT NULL,
+    rua    VARCHAR(100) NOT NULL,
     PRIMARY KEY (cnpj)
 ) ENGINE=InnoDB;
 
 CREATE TABLE Fornecedor (
     cnpj          CHAR(14)      NOT NULL,
     preco_produto DECIMAL(10,2),
-    cidade        VARCHAR(80)   NOT NULL,
-    uf            CHAR(2)       NOT NULL,
-    rua           VARCHAR(120)  NOT NULL,
+    cidade        VARCHAR(50)   NOT NULL,
+    uf            VARCHAR(3)    NOT NULL,
+    rua           VARCHAR(100)  NOT NULL,
     PRIMARY KEY (cnpj),
     CONSTRAINT ck_fornecedor_preco CHECK (preco_produto > 0)
 ) ENGINE=InnoDB;
@@ -31,7 +31,7 @@ CREATE TABLE Fornecedor_Telefone (
 
 CREATE TABLE Produtos (
     id_produto      INT           NOT NULL AUTO_INCREMENT,
-    nome            VARCHAR(100)  NOT NULL,
+    nome            VARCHAR(50)   NOT NULL,
     tipo_produto    VARCHAR(50),
     preco           DECIMAL(10,2) NOT NULL,
     quantidade      INT           NOT NULL DEFAULT 0,
@@ -45,10 +45,10 @@ CREATE TABLE Produtos (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Zelador (
-    cpf           CHAR(11)     NOT NULL,
-    nome          VARCHAR(100) NOT NULL,
-    turno         VARCHAR(20),
-    cnpj_academia CHAR(14)     NOT NULL,
+    cpf           CHAR(11)    NOT NULL,
+    nome          VARCHAR(50) NOT NULL,
+    turno         VARCHAR(50),
+    cnpj_academia CHAR(14)    NOT NULL,
     PRIMARY KEY (cpf),
     CONSTRAINT fk_zelador_academia FOREIGN KEY (cnpj_academia) REFERENCES Academia (cnpj),
     CONSTRAINT ck_zelador_turno CHECK (turno IN ('Manha','Tarde','Noite'))
@@ -66,7 +66,7 @@ CREATE TABLE Despesas (
     id_despesas   INT           NOT NULL AUTO_INCREMENT,
     categoria     VARCHAR(50)   NOT NULL,
     valor         DECIMAL(10,2) NOT NULL,
-    descricao     VARCHAR(255),
+    descricao     VARCHAR(200),
     data_despesas DATE          NOT NULL,
     cnpj_academia CHAR(14)      NOT NULL,
     PRIMARY KEY (id_despesas),
@@ -74,23 +74,11 @@ CREATE TABLE Despesas (
     CONSTRAINT ck_despesa_valor CHECK (valor > 0)
 ) ENGINE=InnoDB;
 
-CREATE TABLE Plano (
-    id_plano      INT           NOT NULL AUTO_INCREMENT,
-    nome_plano    VARCHAR(60)   NOT NULL,
-    preco         DECIMAL(10,2) NOT NULL,
-    duracao       INT           NOT NULL,
-    cnpj_academia CHAR(14)      NOT NULL,
-    PRIMARY KEY (id_plano),
-    CONSTRAINT fk_plano_academia FOREIGN KEY (cnpj_academia) REFERENCES Academia (cnpj),
-    CONSTRAINT ck_plano_preco   CHECK (preco > 0),
-    CONSTRAINT ck_plano_duracao CHECK (duracao > 0)
-) ENGINE=InnoDB;
-
 CREATE TABLE Professor (
-    cpf              CHAR(11)     NOT NULL,
-    nome             VARCHAR(100) NOT NULL,
+    cpf              CHAR(11)    NOT NULL,
+    nome             VARCHAR(50) NOT NULL,
     horario_trabalho VARCHAR(50),
-    especialidade    VARCHAR(80),
+    especialidade    VARCHAR(30),
     PRIMARY KEY (cpf)
 ) ENGINE=InnoDB;
 
@@ -111,21 +99,27 @@ CREATE TABLE Professor_Email (
         REFERENCES Professor (cpf) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE Plano_Professor (
-    id_plano      INT      NOT NULL,
-    cpf_professor CHAR(11) NOT NULL,
-    PRIMARY KEY (id_plano, cpf_professor),
-    CONSTRAINT fk_pp_plano     FOREIGN KEY (id_plano)      REFERENCES Plano (id_plano) ON DELETE CASCADE,
-    CONSTRAINT fk_pp_professor FOREIGN KEY (cpf_professor) REFERENCES Professor (cpf)  ON DELETE CASCADE
+CREATE TABLE Plano (
+    id_plano      INT           NOT NULL AUTO_INCREMENT,
+    nome_plano    VARCHAR(50)   NOT NULL,
+    preco         DECIMAL(10,2) NOT NULL,
+    duracao       INT           NOT NULL,
+    cnpj_academia CHAR(14)      NOT NULL,
+    cpf_professor CHAR(11)      NOT NULL,
+    PRIMARY KEY (id_plano),
+    CONSTRAINT fk_plano_academia  FOREIGN KEY (cnpj_academia) REFERENCES Academia (cnpj),
+    CONSTRAINT fk_plano_professor FOREIGN KEY (cpf_professor) REFERENCES Professor (cpf),
+    CONSTRAINT ck_plano_preco   CHECK (preco > 0),
+    CONSTRAINT ck_plano_duracao CHECK (duracao > 0)
 ) ENGINE=InnoDB;
 
 CREATE TABLE Aluno (
-    cpf             CHAR(11)     NOT NULL,
-    nome            VARCHAR(100) NOT NULL,
+    cpf             CHAR(11)    NOT NULL,
+    nome            VARCHAR(50) NOT NULL,
     data_nascimento DATE,
-    cidade          VARCHAR(80),
-    uf              CHAR(2),
-    rua             VARCHAR(120),
+    cidade          VARCHAR(50),
+    uf              VARCHAR(3),
+    rua             VARCHAR(50),
     PRIMARY KEY (cpf)
 ) ENGINE=InnoDB;
 
@@ -148,12 +142,11 @@ CREATE TABLE Aluno_Email (
 
 CREATE TABLE Matricula (
     id_matricula       INT         NOT NULL AUTO_INCREMENT,
-    status_mensalidade VARCHAR(20) NOT NULL DEFAULT 'Em dia',
+    status_mensalidade VARCHAR(50) NOT NULL DEFAULT 'Em dia',
     frequencia         INT         DEFAULT 0,
     cpf_aluno          CHAR(11)    NOT NULL,
     id_plano           INT         NOT NULL,
     PRIMARY KEY (id_matricula),
-    UNIQUE KEY uq_matricula_aluno (cpf_aluno),
     CONSTRAINT fk_matricula_aluno FOREIGN KEY (cpf_aluno) REFERENCES Aluno (cpf),
     CONSTRAINT fk_matricula_plano FOREIGN KEY (id_plano)  REFERENCES Plano (id_plano),
     CONSTRAINT ck_matricula_status CHECK (status_mensalidade IN ('Em dia','Atrasada','Pendente')),
@@ -162,8 +155,8 @@ CREATE TABLE Matricula (
 
 CREATE TABLE Exercicios (
     id_exercicios      INT          NOT NULL AUTO_INCREMENT,
-    tipos_de_atividade VARCHAR(60)  NOT NULL,
-    descricao          VARCHAR(255),
+    tipos_de_atividade VARCHAR(50)  NOT NULL,
+    descricao          VARCHAR(100),
     nr_atividade       INT,
     cpf_aluno          CHAR(11)     NOT NULL,
     PRIMARY KEY (id_exercicios),
@@ -172,9 +165,9 @@ CREATE TABLE Exercicios (
 ) ENGINE=InnoDB;
 
 CREATE TABLE Tecnico (
-    cpf           CHAR(11)     NOT NULL,
-    nome          VARCHAR(100) NOT NULL,
-    especialidade VARCHAR(80),
+    cpf           CHAR(11)    NOT NULL,
+    nome          VARCHAR(50) NOT NULL,
+    especialidade VARCHAR(50),
     PRIMARY KEY (cpf)
 ) ENGINE=InnoDB;
 
@@ -189,9 +182,9 @@ CREATE TABLE Tecnico_Telefone (
 CREATE TABLE Equipamentos (
     id_equipamentos INT          NOT NULL AUTO_INCREMENT,
     tipo            VARCHAR(100),
-    marca           VARCHAR(60),
+    marca           VARCHAR(50),
     data_aquisicao  DATE,
-    status_atual    VARCHAR(30)  DEFAULT 'Ativo',
+    status_atual    VARCHAR(100) DEFAULT 'Ativo',
     PRIMARY KEY (id_equipamentos),
     CONSTRAINT ck_equip_status CHECK (status_atual IN ('Ativo','Manutencao','Inativo'))
 ) ENGINE=InnoDB;
@@ -278,18 +271,6 @@ INSERT INTO Despesas (categoria, valor, descricao, data_despesas, cnpj_academia)
 ('Equipamentos', 3200.00, 'Compra de halteres',        '2026-10-20', '12345678000190'),
 ('Impostos',     1750.00, 'Impostos mensais',          '2026-10-25', '12345678000190');
 
-INSERT INTO Plano (nome_plano, preco, duracao, cnpj_academia) VALUES
-('Mensal',      120.00,  1, '12345678000190'),
-('Trimestral',  330.00,  3, '12345678000190'),
-('Semestral',   600.00,  6, '12345678000190'),
-('Anual',      1000.00, 12, '12345678000190'),
-('Estudante',    90.00,  1, '12345678000190'),
-('Casal',       210.00,  1, '12345678000190'),
-('Família',     350.00,  1, '12345678000190'),
-('Premium',     180.00,  1, '12345678000190'),
-('Diurno',      100.00,  1, '12345678000190'),
-('Noturno',     110.00,  1, '12345678000190');
-
 INSERT INTO Professor VALUES
 ('20000000001', 'Rafael Martins',  '06h-12h', 'Hipertrofia'),
 ('20000000002', 'Juliana Rocha',   '12h-18h', 'Emagrecimento'),
@@ -316,10 +297,17 @@ INSERT INTO Professor_Email VALUES
 ('20000000007', 'thiago.araujo@academia.com'),   ('20000000008', 'renata.silva@academia.com'),
 ('20000000009', 'gustavo.pinto@academia.com'),   ('20000000010', 'aline.batista@academia.com');
 
-INSERT INTO Plano_Professor VALUES
-(1, '20000000001'), (1, '20000000002'), (2, '20000000003'), (3, '20000000004'),
-(4, '20000000005'), (5, '20000000006'), (6, '20000000007'), (7, '20000000008'),
-(8, '20000000009'), (9, '20000000010'), (10, '20000000001'), (10, '20000000003');
+INSERT INTO Plano (nome_plano, preco, duracao, cnpj_academia, cpf_professor) VALUES
+('Mensal',      120.00,  1, '12345678000190', '20000000001'),
+('Trimestral',  330.00,  3, '12345678000190', '20000000003'),
+('Semestral',   600.00,  6, '12345678000190', '20000000004'),
+('Anual',      1000.00, 12, '12345678000190', '20000000005'),
+('Estudante',    90.00,  1, '12345678000190', '20000000006'),
+('Casal',       210.00,  1, '12345678000190', '20000000007'),
+('Família',     350.00,  1, '12345678000190', '20000000008'),
+('Premium',     180.00,  1, '12345678000190', '20000000009'),
+('Diurno',      100.00,  1, '12345678000190', '20000000010'),
+('Noturno',     110.00,  1, '12345678000190', '20000000001');
 
 INSERT INTO Aluno VALUES
 ('30000000001', 'Sara Oliveira',   '2002-03-14', 'Brasília',     'DF', 'QNN 10 Casa 5'),
