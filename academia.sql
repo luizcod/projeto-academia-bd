@@ -2,8 +2,13 @@ DROP DATABASE IF EXISTS academia_db;
 CREATE DATABASE academia_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE academia_db;
 
+-- =====================================================================
+-- TABELAS
+-- =====================================================================
+
 CREATE TABLE Academia (
     cnpj   CHAR(14)     NOT NULL,
+    nome   VARCHAR(100) NOT NULL,
     cidade VARCHAR(80)  NOT NULL,
     uf     CHAR(2)      NOT NULL,
     rua    VARCHAR(120) NOT NULL,
@@ -51,6 +56,15 @@ CREATE TABLE Zelador (
     PRIMARY KEY (cpf),
     CONSTRAINT fk_zelador_academia FOREIGN KEY (cnpj_academia) REFERENCES Academia (cnpj),
     CONSTRAINT ck_zelador_turno CHECK (turno IN ('Manha','Tarde','Noite'))
+) ENGINE=InnoDB;
+
+-- NOVA: o modelo mostra Telefone ligado ao Zelador
+CREATE TABLE Zelador_Telefone (
+    cpf_zelador CHAR(11)    NOT NULL,
+    telefone    VARCHAR(20) NOT NULL,
+    PRIMARY KEY (cpf_zelador, telefone),
+    CONSTRAINT fk_ztel_zelador FOREIGN KEY (cpf_zelador)
+        REFERENCES Zelador (cpf) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE Despesas (
@@ -102,6 +116,8 @@ CREATE TABLE Professor_Email (
         REFERENCES Professor (cpf) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ATENÇÃO: esta relação (Plano N:N Professor) NÃO aparece no modelo.
+-- Mantenha e adicione ao modelo, ou remova esta tabela e os INSERTs dela.
 CREATE TABLE Plano_Professor (
     id_plano      INT      NOT NULL,
     cpf_professor CHAR(11) NOT NULL,
@@ -137,24 +153,20 @@ CREATE TABLE Aluno_Email (
         REFERENCES Aluno (cpf) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ALTERADA: o modelo coloca Id_plano dentro de Matrícula (Plano 1:N Matrícula).
+-- A tabela Plano_Matricula foi removida.
 CREATE TABLE Matricula (
     id_matricula       INT         NOT NULL AUTO_INCREMENT,
     status_mensalidade VARCHAR(20) NOT NULL DEFAULT 'Em dia',
     frequencia         INT         DEFAULT 0,
     cpf_aluno          CHAR(11)    NOT NULL,
+    id_plano           INT         NOT NULL,
     PRIMARY KEY (id_matricula),
     UNIQUE KEY uq_matricula_aluno (cpf_aluno),
     CONSTRAINT fk_matricula_aluno FOREIGN KEY (cpf_aluno) REFERENCES Aluno (cpf),
+    CONSTRAINT fk_matricula_plano FOREIGN KEY (id_plano)  REFERENCES Plano (id_plano),
     CONSTRAINT ck_matricula_status CHECK (status_mensalidade IN ('Em dia','Atrasada','Pendente')),
     CONSTRAINT ck_matricula_freq   CHECK (frequencia >= 0)
-) ENGINE=InnoDB;
-
-CREATE TABLE Plano_Matricula (
-    id_plano     INT NOT NULL,
-    id_matricula INT NOT NULL,
-    PRIMARY KEY (id_plano, id_matricula),
-    CONSTRAINT fk_pm_plano     FOREIGN KEY (id_plano)     REFERENCES Plano (id_plano)         ON DELETE CASCADE,
-    CONSTRAINT fk_pm_matricula FOREIGN KEY (id_matricula) REFERENCES Matricula (id_matricula) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE Exercicios (
@@ -183,15 +195,19 @@ CREATE TABLE Tecnico_Telefone (
         REFERENCES Tecnico (cpf) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ALTERADA: adicionada a coluna "tipo" que existe no modelo
 CREATE TABLE Equipamentos (
-    id_equipamentos INT         NOT NULL AUTO_INCREMENT,
+    id_equipamentos INT          NOT NULL AUTO_INCREMENT,
+    tipo            VARCHAR(100),
     marca           VARCHAR(60),
     data_aquisicao  DATE,
-    status_atual    VARCHAR(30) DEFAULT 'Ativo',
+    status_atual    VARCHAR(30)  DEFAULT 'Ativo',
     PRIMARY KEY (id_equipamentos),
     CONSTRAINT ck_equip_status CHECK (status_atual IN ('Ativo','Manutencao','Inativo'))
 ) ENGINE=InnoDB;
 
+-- N:N (um equipamento serve vários exercícios e vice-versa).
+-- O modelo precisa ser corrigido para refletir isso.
 CREATE TABLE Exercicio_Equipamento (
     id_exercicios   INT NOT NULL,
     id_equipamentos INT NOT NULL,
@@ -200,6 +216,8 @@ CREATE TABLE Exercicio_Equipamento (
     CONSTRAINT fk_ee_equipamento FOREIGN KEY (id_equipamentos) REFERENCES Equipamentos (id_equipamentos) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ATENÇÃO: o modelo tem a relação "É relacionado" entre Técnico e Equipamento
+-- mas sem chave nenhuma. Adicione esta tabela ao modelo.
 CREATE TABLE Tecnico_Equipamento (
     cpf_tecnico     CHAR(11) NOT NULL,
     id_equipamentos INT      NOT NULL,
@@ -207,7 +225,13 @@ CREATE TABLE Tecnico_Equipamento (
     CONSTRAINT fk_te_tecnico     FOREIGN KEY (cpf_tecnico)     REFERENCES Tecnico (cpf)                  ON DELETE CASCADE,
     CONSTRAINT fk_te_equipamento FOREIGN KEY (id_equipamentos) REFERENCES Equipamentos (id_equipamentos) ON DELETE CASCADE
 ) ENGINE=InnoDB;
-INSERT INTO Academia VALUES ('12345678000190', 'Brasília', 'DF', 'SQS 308 Bloco A');
+
+-- =====================================================================
+-- DADOS
+-- =====================================================================
+
+INSERT INTO Academia (cnpj, nome, cidade, uf, rua) VALUES
+('12345678000190', 'Academia Central Fit', 'Brasília', 'DF', 'SQS 308 Bloco A');
 
 INSERT INTO Fornecedor (cnpj, preco_produto, cidade, uf, rua) VALUES
 ('11000000000101', 129.90, 'Brasília',       'DF', 'SIA Trecho 3 Lote 10'),
@@ -252,6 +276,13 @@ INSERT INTO Zelador VALUES
 ('10000000008', 'Luciana Barros',  'Tarde', '12345678000190'),
 ('10000000009', 'Marcos Teixeira', 'Noite', '12345678000190'),
 ('10000000010', 'Patrícia Gomes',  'Manha', '12345678000190');
+
+INSERT INTO Zelador_Telefone VALUES
+('10000000001', '(61) 99400-0001'), ('10000000002', '(61) 99400-0002'),
+('10000000003', '(61) 99400-0003'), ('10000000004', '(61) 99400-0004'),
+('10000000005', '(61) 99400-0005'), ('10000000006', '(61) 99400-0006'),
+('10000000007', '(61) 99400-0007'), ('10000000008', '(61) 99400-0008'),
+('10000000009', '(61) 99400-0009'), ('10000000010', '(61) 99400-0010');
 
 INSERT INTO Despesas (categoria, valor, descricao, data_despesas, cnpj_academia) VALUES
 ('Energia',      2450.00, 'Conta de luz de outubro',   '2026-10-05', '12345678000190'),
@@ -339,17 +370,20 @@ INSERT INTO Aluno_Email VALUES
 ('30000000009', 'joao.vieira@email.com'),     ('30000000010', 'karina.melo@email.com'),
 ('30000000011', 'leonardo.dias@email.com'),   ('30000000012', 'mariana.freitas@email.com');
 
-INSERT INTO Matricula (status_mensalidade, frequencia, cpf_aluno) VALUES
-('Em dia',   12, '30000000001'), ('Em dia',   20, '30000000002'),
-('Atrasada',  8, '30000000003'), ('Em dia',   15, '30000000004'),
-('Em dia',   25, '30000000005'), ('Pendente',  5, '30000000006'),
-('Em dia',   18, '30000000007'), ('Em dia',   10, '30000000008'),
-('Em dia',   30, '30000000009'), ('Atrasada',  3, '30000000010'),
-('Em dia',   22, '30000000011'), ('Em dia',   14, '30000000012');
-
-INSERT INTO Plano_Matricula VALUES
-(1, 1), (2, 2), (1, 3), (4, 4), (3, 5), (5, 6),
-(8, 7), (6, 8), (4, 9), (5, 10), (10, 11), (7, 12);
+-- id_plano agora vem junto com a matrícula (mesmos pares que estavam em Plano_Matricula)
+INSERT INTO Matricula (status_mensalidade, frequencia, cpf_aluno, id_plano) VALUES
+('Em dia',   12, '30000000001', 1),
+('Em dia',   20, '30000000002', 2),
+('Atrasada',  8, '30000000003', 1),
+('Em dia',   15, '30000000004', 4),
+('Em dia',   25, '30000000005', 3),
+('Pendente',  5, '30000000006', 5),
+('Em dia',   18, '30000000007', 8),
+('Em dia',   10, '30000000008', 6),
+('Em dia',   30, '30000000009', 4),
+('Atrasada',  3, '30000000010', 5),
+('Em dia',   22, '30000000011', 10),
+('Em dia',   14, '30000000012', 7);
 
 INSERT INTO Exercicios (tipos_de_atividade, descricao, nr_atividade, cpf_aluno) VALUES
 ('Musculação', 'Supino reto com barra',   1,  '30000000001'),
@@ -382,17 +416,17 @@ INSERT INTO Tecnico_Telefone VALUES
 ('40000000007', '(61) 99300-0007'), ('40000000008', '(61) 99300-0008'),
 ('40000000009', '(61) 99300-0009'), ('40000000010', '(61) 99300-0010');
 
-INSERT INTO Equipamentos (marca, data_aquisicao, status_atual) VALUES
-('Movement',     '2022-03-10', 'Ativo'),
-('Technogym',    '2021-07-15', 'Ativo'),
-('Life Fitness', '2023-01-20', 'Ativo'),
-('Movement',     '2022-09-05', 'Manutencao'),
-('Technogym',    '2020-11-30', 'Ativo'),
-('Kikos',        '2023-05-12', 'Ativo'),
-('Movement',     '2021-02-18', 'Inativo'),
-('Life Fitness', '2024-04-08', 'Ativo'),
-('Technogym',    '2022-12-01', 'Ativo'),
-('Kikos',        '2024-08-22', 'Ativo');
+INSERT INTO Equipamentos (tipo, marca, data_aquisicao, status_atual) VALUES
+('Esteira',                'Movement',     '2022-03-10', 'Ativo'),
+('Estação de musculação',  'Technogym',    '2021-07-15', 'Ativo'),
+('Bicicleta ergométrica',  'Life Fitness', '2023-01-20', 'Ativo'),
+('Esteira',                'Movement',     '2022-09-05', 'Manutencao'),
+('Polia e cabos',          'Technogym',    '2020-11-30', 'Ativo'),
+('Máquina de peso',        'Kikos',        '2023-05-12', 'Ativo'),
+('Esteira',                'Movement',     '2021-02-18', 'Inativo'),
+('Simulador de escada',    'Life Fitness', '2024-04-08', 'Ativo'),
+('Elíptico',               'Technogym',    '2022-12-01', 'Ativo'),
+('Leg press',              'Kikos',        '2024-08-22', 'Ativo');
 
 INSERT INTO Exercicio_Equipamento VALUES
 (1, 2), (2, 2), (3, 5), (4, 6), (5, 1), (5, 7), (6, 3), (7, 2), (8, 5), (9, 6), (10, 8);
