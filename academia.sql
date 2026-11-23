@@ -2,10 +2,6 @@ DROP DATABASE IF EXISTS academia_db;
 CREATE DATABASE academia_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE academia_db;
 
--- =====================================================================
--- TABELAS
--- =====================================================================
-
 CREATE TABLE Academia (
     cnpj   CHAR(14)     NOT NULL,
     nome   VARCHAR(100) NOT NULL,
@@ -58,7 +54,6 @@ CREATE TABLE Zelador (
     CONSTRAINT ck_zelador_turno CHECK (turno IN ('Manha','Tarde','Noite'))
 ) ENGINE=InnoDB;
 
--- NOVA: o modelo mostra Telefone ligado ao Zelador
 CREATE TABLE Zelador_Telefone (
     cpf_zelador CHAR(11)    NOT NULL,
     telefone    VARCHAR(20) NOT NULL,
@@ -83,7 +78,7 @@ CREATE TABLE Plano (
     id_plano      INT           NOT NULL AUTO_INCREMENT,
     nome_plano    VARCHAR(60)   NOT NULL,
     preco         DECIMAL(10,2) NOT NULL,
-    duracao       INT           NOT NULL COMMENT 'Duração em meses',
+    duracao       INT           NOT NULL,
     cnpj_academia CHAR(14)      NOT NULL,
     PRIMARY KEY (id_plano),
     CONSTRAINT fk_plano_academia FOREIGN KEY (cnpj_academia) REFERENCES Academia (cnpj),
@@ -116,8 +111,6 @@ CREATE TABLE Professor_Email (
         REFERENCES Professor (cpf) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ATENÇÃO: esta relação (Plano N:N Professor) NÃO aparece no modelo.
--- Mantenha e adicione ao modelo, ou remova esta tabela e os INSERTs dela.
 CREATE TABLE Plano_Professor (
     id_plano      INT      NOT NULL,
     cpf_professor CHAR(11) NOT NULL,
@@ -153,8 +146,6 @@ CREATE TABLE Aluno_Email (
         REFERENCES Aluno (cpf) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ALTERADA: o modelo coloca Id_plano dentro de Matrícula (Plano 1:N Matrícula).
--- A tabela Plano_Matricula foi removida.
 CREATE TABLE Matricula (
     id_matricula       INT         NOT NULL AUTO_INCREMENT,
     status_mensalidade VARCHAR(20) NOT NULL DEFAULT 'Em dia',
@@ -195,7 +186,6 @@ CREATE TABLE Tecnico_Telefone (
         REFERENCES Tecnico (cpf) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ALTERADA: adicionada a coluna "tipo" que existe no modelo
 CREATE TABLE Equipamentos (
     id_equipamentos INT          NOT NULL AUTO_INCREMENT,
     tipo            VARCHAR(100),
@@ -206,8 +196,6 @@ CREATE TABLE Equipamentos (
     CONSTRAINT ck_equip_status CHECK (status_atual IN ('Ativo','Manutencao','Inativo'))
 ) ENGINE=InnoDB;
 
--- N:N (um equipamento serve vários exercícios e vice-versa).
--- O modelo precisa ser corrigido para refletir isso.
 CREATE TABLE Exercicio_Equipamento (
     id_exercicios   INT NOT NULL,
     id_equipamentos INT NOT NULL,
@@ -216,8 +204,6 @@ CREATE TABLE Exercicio_Equipamento (
     CONSTRAINT fk_ee_equipamento FOREIGN KEY (id_equipamentos) REFERENCES Equipamentos (id_equipamentos) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ATENÇÃO: o modelo tem a relação "É relacionado" entre Técnico e Equipamento
--- mas sem chave nenhuma. Adicione esta tabela ao modelo.
 CREATE TABLE Tecnico_Equipamento (
     cpf_tecnico     CHAR(11) NOT NULL,
     id_equipamentos INT      NOT NULL,
@@ -225,10 +211,6 @@ CREATE TABLE Tecnico_Equipamento (
     CONSTRAINT fk_te_tecnico     FOREIGN KEY (cpf_tecnico)     REFERENCES Tecnico (cpf)                  ON DELETE CASCADE,
     CONSTRAINT fk_te_equipamento FOREIGN KEY (id_equipamentos) REFERENCES Equipamentos (id_equipamentos) ON DELETE CASCADE
 ) ENGINE=InnoDB;
-
--- =====================================================================
--- DADOS
--- =====================================================================
 
 INSERT INTO Academia (cnpj, nome, cidade, uf, rua) VALUES
 ('12345678000190', 'Academia Central Fit', 'Brasília', 'DF', 'SQS 308 Bloco A');
@@ -370,7 +352,6 @@ INSERT INTO Aluno_Email VALUES
 ('30000000009', 'joao.vieira@email.com'),     ('30000000010', 'karina.melo@email.com'),
 ('30000000011', 'leonardo.dias@email.com'),   ('30000000012', 'mariana.freitas@email.com');
 
--- id_plano agora vem junto com a matrícula (mesmos pares que estavam em Plano_Matricula)
 INSERT INTO Matricula (status_mensalidade, frequencia, cpf_aluno, id_plano) VALUES
 ('Em dia',   12, '30000000001', 1),
 ('Em dia',   20, '30000000002', 2),
